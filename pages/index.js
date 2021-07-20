@@ -290,7 +290,7 @@ function Index({ accounts, error, msg }) {
   );
 }
 
-export const getStaticProps = async () => {
+export const getServerSideProps = async () => {
   try {
     const client = new Client({
       connectionString: process.env.PG_CON_STRING,
