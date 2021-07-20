@@ -1,4 +1,4 @@
-import { Client } from "pg";
+import { Pool } from "pg";
 import {
   Typography,
   responsiveFontSizes,
@@ -292,12 +292,12 @@ function Index({ accounts, error, msg }) {
 
 export const getServerSideProps = async () => {
   try {
-    const client = new Client({
+    const pool = new Pool({
       connectionString: process.env.PG_CON_STRING,
     });
-    await client.connect();
+    await pool.connect();
 
-    const accounts = await client.query(
+    const accounts = await pool.query(
       "SELECT * FROM vime_accounts ORDER BY level DESC;"
     );
     return {
