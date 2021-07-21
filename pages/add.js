@@ -23,6 +23,7 @@ import { MoreVert } from "@material-ui/icons";
 import { green, purple } from "@material-ui/core/colors";
 import { useState } from "react";
 import axios from "axios";
+import Gun from "gun";
 
 let theme = createTheme({
   palette: {
@@ -72,6 +73,8 @@ const useStyles = makeStyles((theme) => ({
 export default function Add() {
   const classes = useStyles();
 
+  const gun = new Gun("https://mvp-gun.herokuapp.com/gun");
+
   let [anchorEl, setAnchorEl] = useState(null);
   let isMenuOpen = Boolean(anchorEl);
 
@@ -110,7 +113,7 @@ export default function Add() {
 
   const addAccount = async (e) => {
     e.preventDefault();
-    let { data } = await axios.post("/api/add", {
+    /* let { data } = await axios.post("/api/add", {
       login: formLogin,
       level: formLevel,
     });
@@ -119,7 +122,15 @@ export default function Add() {
       setErrorSnackbarOpen(true);
     } else {
       setSuccessSnackbarOpen(true);
-    }
+    } */
+    let tmp = await gun
+      .get(formLogin)
+      .put({ login: formLogin, level: formLevel });
+    await gun.get("vimeAccs").set(tmp);
+  };
+
+  const logAll = () => {
+    gun.get("vimeAccs").map((acc) => console.log(acc.login));
   };
 
   return (
@@ -226,6 +237,9 @@ export default function Add() {
                 onClick={addAccount}
               >
                 Add
+              </Button>
+              <Button color="secondary" variant="contained" onClick={logAll}>
+                log
               </Button>
             </form>
           </Paper>

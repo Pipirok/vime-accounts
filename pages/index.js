@@ -1,4 +1,3 @@
-import { Pool } from "pg";
 import {
   Typography,
   responsiveFontSizes,
@@ -21,8 +20,9 @@ import {
 import Link from "next/link";
 import MoreVert from "@material-ui/icons/MoreVert";
 import { green, purple } from "@material-ui/core/colors";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import axios from "axios";
+import Gun from "gun";
 
 let theme = createTheme({
   palette: {
@@ -65,6 +65,10 @@ const useStyles = makeStyles((theme) => ({
 
 function Index({ accounts, error, msg }) {
   const classes = useStyles();
+  useEffect(() => {
+    const gun = Gun("https://mvp-gun.herokuapp.com/gun");
+    gun.get("vimeAccs").map((acc) => console.log(acc));
+  }, []);
 
   let [data, changeData] = useState(accounts);
 
@@ -292,18 +296,10 @@ function Index({ accounts, error, msg }) {
 
 export const getServerSideProps = async () => {
   try {
-    const pool = new Pool({
-      connectionString: process.env.PG_CON_STRING,
-    });
-    await pool.connect();
-
-    const accounts = await pool.query(
-      "SELECT * FROM vime_accounts ORDER BY level DESC;"
-    );
     return {
       props: {
-        accounts: accounts.rows,
         error: false,
+        accounts: [{ login: "Pipirok", level: 25 }],
       },
     };
   } catch (e) {
