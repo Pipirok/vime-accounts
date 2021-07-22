@@ -124,7 +124,7 @@ export default function Add() {
     let login = formLogin;
     let level = formLevel;
 
-    level = isNaN(level) ? 0 : level;
+    level = isNaN(parseInt(level)) ? 0 : parseInt(level);
 
     login = login.replace(/[^A-Za-z0-9_]/g, "");
 
