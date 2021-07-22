@@ -22,7 +22,6 @@ import Link from "next/link";
 import { MoreVert } from "@material-ui/icons";
 import { green, purple } from "@material-ui/core/colors";
 import { useState } from "react";
-import axios from "axios";
 import Gun from "gun";
 
 let theme = createTheme({
@@ -67,6 +66,13 @@ const useStyles = makeStyles((theme) => ({
     display: "flex",
     justifyContent: "flex-start",
     padding: "0.5rem",
+    width: "100%",
+    [theme.breakpoints.up("sm")]: {
+      flexDirection: "row",
+    },
+    [theme.breakpoints.down("xs")]: {
+      flexDirection: "column",
+    },
   },
 }));
 
@@ -84,7 +90,7 @@ export default function Add() {
   let [snackbarMessage, setSnackbarMessage] = useState(null);
 
   let [formLogin, setFormLogin] = useState("");
-  let [formLevel, setFormLevel] = useState(0);
+  let [formLevel, setFormLevel] = useState("");
 
   const handleLoginChange = (e) => {
     setFormLogin(e.target.value);
@@ -113,24 +119,25 @@ export default function Add() {
 
   const addAccount = async (e) => {
     e.preventDefault();
-    /* let { data } = await axios.post("/api/add", {
-      login: formLogin,
-      level: formLevel,
-    });
-    setSnackbarMessage(data.msg);
-    if (data.error) {
-      setErrorSnackbarOpen(true);
-    } else {
-      setSuccessSnackbarOpen(true);
-    } */
-    let tmp = await gun
-      .get(formLogin)
-      .put({ login: formLogin, level: formLevel });
-    await gun.get("vimeAccs").set(tmp);
-  };
 
-  const logAll = () => {
-    gun.get("vimeAccs").map((acc) => console.log(acc.login));
+    // Validation
+    let login = formLogin;
+    let level = formLevel;
+
+    level = isNaN(level) ? 0 : level;
+
+    login = login.replace(/[^A-Za-z0-9_]/g, "");
+
+    if (login.length <= 0 || login.length >= 17) {
+      setSnackbarMessage("Login is too long!");
+      setErrorSnackbarOpen(true);
+      return;
+    }
+
+    let tmp = gun.get(login).put({ login, level });
+    gun.get("vimeAccs").set(tmp);
+    setSnackbarMessage("Account added successfully!");
+    setSnackbarOpen(true);
   };
 
   return (
@@ -237,9 +244,6 @@ export default function Add() {
                 onClick={addAccount}
               >
                 Add
-              </Button>
-              <Button color="secondary" variant="contained" onClick={logAll}>
-                log
               </Button>
             </form>
           </Paper>
