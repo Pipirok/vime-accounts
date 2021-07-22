@@ -12,7 +12,7 @@ A WIP project in [Next.js](https://nextjs.org) for managing accounts on [vimewor
 - View all acounts with level less than 5
 - Select a random account whose level is less than 5
 
-You can add your own database (currently, only PostgreSQL is supported) by passing its URI to ``PG_CON_STRING``
+You can add your own GunDB peer, by replacing the Gun arguments list with your own GunDB relay peer address
 
 ## How to use:
 
@@ -20,4 +20,4 @@ Clone the repo and install all dependencies:
 
 `` npm install ``
 
-Then, configure server variables (next.config.js) and the system is ready for deployment!
+And it's ready to go.
