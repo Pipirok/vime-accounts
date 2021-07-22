@@ -80,7 +80,10 @@ const useStyles = makeStyles((theme) => ({
 export default function Add() {
   const classes = useStyles();
 
-  const gun = new Gun("https://vime-gun.vercel.app/", "mvp-gun.herokuapp.com");
+  const gun = new Gun([
+    "https://vime-gun.vercel.app/",
+    "mvp-gun.herokuapp.com",
+  ]);
 
   let [anchorEl, setAnchorEl] = useState(null);
   let isMenuOpen = Boolean(anchorEl);
