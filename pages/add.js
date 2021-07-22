@@ -201,7 +201,7 @@ export default function Add() {
       </div>
       <Grid container style={{ height: "100vh", paddingTop: "1rem" }}>
         <Grid item xs={1} md={2} lg={3} xl={4} />
-        <Grid item style={{ paddingTop: "1rem" }}>
+        <Grid item xs={10} md={8} lg={6} xl={4} style={{ paddingTop: "1rem" }}>
           <Paper className={classes.paper}>
             <Typography gutterBottom variant="h2">
               Add an account(s)
