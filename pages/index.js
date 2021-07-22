@@ -63,7 +63,7 @@ const useStyles = makeStyles((theme) => ({
 
 export default function Index() {
   const classes = useStyles();
-  const gun = Gun("https://mvp-gun.herokuapp.com/gun");
+  const gun = Gun("https://vime-gun.vercel.app/", "mvp-gun.herokuapp.com/gun");
 
   let [data, changeData] = useState([]);
 

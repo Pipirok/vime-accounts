@@ -64,8 +64,9 @@ const useStyles = makeStyles((theme) => ({
   },
   form: {
     display: "flex",
-    justifyContent: "flex-start",
+    justifyContent: "space-evenly",
     padding: "0.5rem",
+    marginBottom: "1rem",
     width: "100%",
     [theme.breakpoints.up("sm")]: {
       flexDirection: "row",
@@ -79,7 +80,7 @@ const useStyles = makeStyles((theme) => ({
 export default function Add() {
   const classes = useStyles();
 
-  const gun = new Gun("https://mvp-gun.herokuapp.com/gun");
+  const gun = new Gun("https://vime-gun.vercel.app/", "mvp-gun.herokuapp.com");
 
   let [anchorEl, setAnchorEl] = useState(null);
   let isMenuOpen = Boolean(anchorEl);
@@ -91,9 +92,14 @@ export default function Add() {
 
   let [formLogin, setFormLogin] = useState("");
   let [formLevel, setFormLevel] = useState("");
+  let [delFormLogin, setDelFormLogin] = useState("");
 
   const handleLoginChange = (e) => {
     setFormLogin(e.target.value);
+  };
+
+  const handleDelLoginChange = (e) => {
+    setDelFormLogin(e.target.value);
   };
 
   const handleLevelChange = (e) => {
@@ -117,7 +123,7 @@ export default function Add() {
     setErrorSnackbarOpen(false);
   };
 
-  const addAccount = async (e) => {
+  const addAccount = (e) => {
     e.preventDefault();
 
     // Validation
@@ -135,9 +141,29 @@ export default function Add() {
     }
 
     let tmp = gun.get(login).put({ login, level });
+    gun.get("vimeAccs").set(tmp, () => {
+      setSnackbarMessage("Account added successfully!");
+      setSuccessSnackbarOpen(true);
+    });
+  };
+
+  const deleteAccount = (e) => {
+    e.preventDefault();
+
+    // Validation
+    let login = delFormLogin;
+    login = login.replace(/[^A-Za-z0-9_]/g, "");
+
+    if (login.length <= 0 || login.length >= 17) {
+      setSnackbarMessage("Login is too long/short!");
+      setErrorSnackbarOpen(true);
+      return;
+    }
+
+    let tmp = gun.get(login).put({ login: null, level: null });
     gun.get("vimeAccs").set(tmp);
-    setSnackbarMessage("Account added successfully!");
-    setSnackbarOpen(true);
+    setSnackbarMessage("Account deleted successfully!");
+    setSuccessSnackbarOpen(true);
   };
 
   return (
@@ -244,6 +270,28 @@ export default function Add() {
                 onClick={addAccount}
               >
                 Add
+              </Button>
+            </form>
+            <form className={classes.form} onSubmit={deleteAccount}>
+              <Typography variant="body2">
+                ! deletion does not work at the moment.
+              </Typography>
+              <TextField
+                label="Login"
+                id="acc-login"
+                required
+                autoComplete="off"
+                variant="outlined"
+                type="text"
+                value={delFormLogin}
+                onChange={handleDelLoginChange}
+              />
+              <Button
+                color="secondary"
+                variant="contained"
+                onClick={deleteAccount}
+              >
+                Delete
               </Button>
             </form>
           </Paper>
