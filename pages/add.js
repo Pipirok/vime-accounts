@@ -22,7 +22,7 @@ import Link from "next/link";
 import { MoreVert } from "@material-ui/icons";
 import { green, purple } from "@material-ui/core/colors";
 import { useState } from "react";
-import Gun from "gun";
+import axios from "axios";
 
 let theme = createTheme({
   palette: {
@@ -80,11 +80,6 @@ const useStyles = makeStyles((theme) => ({
 export default function Add() {
   const classes = useStyles();
 
-  const gun = new Gun([
-    "https://vime-gun.vercel.app/",
-    "mvp-gun.herokuapp.com",
-  ]);
-
   let [anchorEl, setAnchorEl] = useState(null);
   let isMenuOpen = Boolean(anchorEl);
 
@@ -126,13 +121,13 @@ export default function Add() {
     setErrorSnackbarOpen(false);
   };
 
-  const addAccount = (e) => {
+  const addAccount = async (e) => {
     e.preventDefault();
 
-    // Validation
-    let login = formLogin;
     let level = formLevel;
+    let login = formLogin;
 
+    // Validation
     level = isNaN(parseInt(level)) ? 0 : parseInt(level);
 
     login = login.replace(/[^A-Za-z0-9_]/g, "");
@@ -143,30 +138,15 @@ export default function Add() {
       return;
     }
 
-    let tmp = gun.get(login).put({ login, level });
-    gun.get("vimeAccs").set(tmp, () => {
-      setSnackbarMessage("Account added successfully!");
-      setSuccessSnackbarOpen(true);
-    });
+    const response = await (
+      await axios.post("/api/add", { login, level })
+    ).data;
+    console.log(response);
   };
 
   const deleteAccount = (e) => {
     e.preventDefault();
-
-    // Validation
-    let login = delFormLogin;
-    login = login.replace(/[^A-Za-z0-9_]/g, "");
-
-    if (login.length <= 0 || login.length >= 17) {
-      setSnackbarMessage("Login is too long/short!");
-      setErrorSnackbarOpen(true);
-      return;
-    }
-
-    let tmp = gun.get(login).put({ login: null, level: null });
-    gun.get("vimeAccs").set(tmp);
-    setSnackbarMessage("Account deleted successfully!");
-    setSuccessSnackbarOpen(true);
+    // TODO: actually add a function to delete an account
   };
 
   return (
@@ -228,7 +208,7 @@ export default function Add() {
           <MenuItem onClick={() => alert("Recaching?")}>Recache</MenuItem>
         </Menu>
       </div>
-      <Grid container style={{ height: "100vh", paddingTop: "1rem" }}>
+      <Grid container style={{ flexGrow: 1, paddingTop: "1rem" }}>
         <Grid item xs={1} md={2} lg={3} xl={4} />
         <Grid item xs={10} md={8} lg={6} xl={4} style={{ paddingTop: "1rem" }}>
           <Paper className={classes.paper}>

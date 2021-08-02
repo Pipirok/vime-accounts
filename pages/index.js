@@ -19,8 +19,8 @@ import {
 import Link from "next/link";
 import MoreVert from "@material-ui/icons/MoreVert";
 import { green, purple } from "@material-ui/core/colors";
-import { useEffect, useState } from "react";
-import Gun from "gun";
+import { useState } from "react";
+import gun from "../vimeGun";
 
 let theme = createTheme({
   palette: {
@@ -61,28 +61,10 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-export default function Index() {
+function Index({ accs }) {
   const classes = useStyles();
-  const gun = Gun([
-    "https://vime-gun.vercel.app/",
-    "mvp-gun.herokuapp.com/gun",
-  ]);
 
-  let [data, changeData] = useState([]);
-
-  useEffect(() => {
-    let tmp = [];
-    gun.get("vimeAccs").map((acc) => {
-      if (typeof acc.login !== "undefined") {
-        if (tmp.includes({ login: acc.login, level: acc.level })) {
-          return;
-        }
-        tmp.push({ login: acc.login, level: acc.level });
-        tmp.sort((acc1, acc2) => acc2.level - acc1.level);
-      }
-    });
-    changeData(tmp);
-  }, []);
+  let [data, changeData] = useState(accs);
 
   let [anchorEl, setAnchorEl] = useState(null);
   let isMenuOpen = Boolean(anchorEl);
@@ -102,17 +84,7 @@ export default function Index() {
   };
 
   const showAll = () => {
-    let tmp = [];
-    gun.get("vimeAccs").map((acc) => {
-      if (typeof acc.login !== "undefined") {
-        if (tmp.includes({ login: acc.login, level: acc.level })) {
-          return;
-        }
-        tmp.push({ login: acc.login, level: acc.level });
-        tmp.sort((acc1, acc2) => acc2.level - acc1.level);
-      }
-    });
-    changeData(tmp);
+    changeData(accs);
     setAnchorEl(null);
   };
 
@@ -182,7 +154,7 @@ export default function Index() {
           <MenuItem onClick={showAll}>Show all</MenuItem>
         </Menu>
       </div>
-      <Grid container style={{ height: "100vh" }}>
+      <Grid container style={{ flexGrow: 1 }}>
         <Grid item xs={1} md={2} lg={3} xl={4} />
         <Grid item style={{ paddingTop: "1rem" }}>
           <Typography variant="h2" component="h2">
@@ -209,3 +181,25 @@ export default function Index() {
     </ThemeProvider>
   );
 }
+
+export const getServerSideProps = () => {
+  let accs = [];
+  // Yeah, I have no idea how to manage public data in Gun.js
+  gun.get("vimeAccs").map((acc) => {
+    if (typeof acc.login !== "undefined") {
+      if (accs.includes({ login: acc.login, level: acc.level })) {
+        return;
+      }
+      accs.push({ login: acc.login, level: acc.level });
+      accs.sort((acc1, acc2) => acc2.level - acc1.level);
+    }
+  });
+
+  return {
+    props: {
+      accs,
+    },
+  };
+};
+
+export default Index;
