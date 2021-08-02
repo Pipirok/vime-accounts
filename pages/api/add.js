@@ -1,5 +1,5 @@
 import nc from "next-connect";
-import gun from "../../other/vimeGun";
+import gun from "../../components/vimeGun";
 
 const handler = nc({
   onError: function (err, req, res) {
