@@ -1,5 +1,7 @@
 import nc from "next-connect";
-import gun from "../../components/vimeGun";
+import Gun from "gun";
+
+export const gun = Gun(["mvp-gun.herokuapp.com/gun", "localhost:8765"]);
 
 const handler = nc({
   onError: function (err, req, res) {
