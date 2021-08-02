@@ -1,7 +1,7 @@
 import nc from "next-connect";
 import Gun from "gun";
 
-export const gun = Gun(["mvp-gun.herokuapp.com/gun", "localhost:8765"]);
+export const gun = Gun(["mvp-gun.herokuapp.com/gun"]);
 
 const handler = nc({
   onError: function (err, req, res) {
