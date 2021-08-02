@@ -20,7 +20,7 @@ import Link from "next/link";
 import MoreVert from "@material-ui/icons/MoreVert";
 import { green, purple } from "@material-ui/core/colors";
 import { useState } from "react";
-import gun from "../vimeGun";
+import gun from "../public/vimeGun";
 
 let theme = createTheme({
   palette: {
