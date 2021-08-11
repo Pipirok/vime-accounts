@@ -63,13 +63,23 @@ const useStyles = makeStyles((theme) => ({
 
 export default function Index() {
   const classes = useStyles();
-  const gun = Gun("https://vime-gun.vercel.app/", "mvp-gun.herokuapp.com/gun");
+  const gun = Gun("localhost:8765");
 
   let [data, changeData] = useState([]);
 
-  useEffect(() => {
+  useEffect(async () => {
     let tmp = [];
-    gun.get("vimeAccs").map((acc) => {
+    gun.get("vimeAccs").on((d) => {
+      Object.keys(d).map((login) => {
+        gun.get(login).on((acc) => {
+          tmp.push({ login: acc.login, level: acc.level });
+          tmp.sort((acc1, acc2) => acc2.level - acc1.level);
+          changeData(tmp);
+        });
+      });
+    });
+
+    /* .map((acc) => {
       if (typeof acc.login !== "undefined") {
         if (tmp.includes({ login: acc.login, level: acc.level })) {
           return;
@@ -77,8 +87,7 @@ export default function Index() {
         tmp.push({ login: acc.login, level: acc.level });
         tmp.sort((acc1, acc2) => acc2.level - acc1.level);
       }
-    });
-    changeData(tmp);
+    }); */
   }, []);
 
   let [anchorEl, setAnchorEl] = useState(null);
@@ -100,16 +109,15 @@ export default function Index() {
 
   const showAll = () => {
     let tmp = [];
-    gun.get("vimeAccs").map((acc) => {
-      if (typeof acc.login !== "undefined") {
-        if (tmp.includes({ login: acc.login, level: acc.level })) {
-          return;
-        }
-        tmp.push({ login: acc.login, level: acc.level });
-        tmp.sort((acc1, acc2) => acc2.level - acc1.level);
-      }
+    gun.get("vimeAccs").on((d) => {
+      Object.keys(d).map((login) => {
+        gun.get(login).on((acc) => {
+          tmp.push({ login: acc.login, level: acc.level });
+          tmp.sort((acc1, acc2) => acc2.level - acc1.level);
+          changeData(tmp);
+        });
+      });
     });
-    changeData(tmp);
     setAnchorEl(null);
   };
 
@@ -179,7 +187,7 @@ export default function Index() {
           <MenuItem onClick={showAll}>Show all</MenuItem>
         </Menu>
       </div>
-      <Grid container style={{ height: "100vh" }}>
+      <Grid container style={{ flexGrow: 1, paddingTop: "1rem" }}>
         <Grid item xs={1} md={2} lg={3} xl={4} />
         <Grid item style={{ paddingTop: "1rem" }}>
           <Typography variant="h2" component="h2">

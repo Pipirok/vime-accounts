@@ -21,7 +21,7 @@ import Alert from "@material-ui/lab/Alert";
 import Link from "next/link";
 import { MoreVert } from "@material-ui/icons";
 import { green, purple } from "@material-ui/core/colors";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Gun from "gun";
 
 let theme = createTheme({
@@ -80,7 +80,7 @@ const useStyles = makeStyles((theme) => ({
 export default function Add() {
   const classes = useStyles();
 
-  const gun = new Gun("https://vime-gun.vercel.app/", "mvp-gun.herokuapp.com");
+  const gun = Gun("localhost:8765");
 
   let [anchorEl, setAnchorEl] = useState(null);
   let isMenuOpen = Boolean(anchorEl);
@@ -134,7 +134,13 @@ export default function Add() {
 
     login = login.replace(/[^A-Za-z0-9_]/g, "");
 
-    if (login.length <= 0 || login.length >= 17) {
+    if (login.length <= 2) {
+      setSnackbarMessage("Login is too long!");
+      setErrorSnackbarOpen(true);
+      return;
+    }
+
+    if (login.length >= 17) {
       setSnackbarMessage("Login is too long!");
       setErrorSnackbarOpen(true);
       return;
@@ -225,7 +231,7 @@ export default function Add() {
           <MenuItem onClick={() => alert("Recaching?")}>Recache</MenuItem>
         </Menu>
       </div>
-      <Grid container style={{ height: "100vh", paddingTop: "1rem" }}>
+      <Grid container style={{ flexGrow: 1, paddingTop: "1rem" }}>
         <Grid item xs={1} md={2} lg={3} xl={4} />
         <Grid item xs={10} md={8} lg={6} xl={4} style={{ paddingTop: "1rem" }}>
           <Paper className={classes.paper}>
