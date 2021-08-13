@@ -21,8 +21,9 @@ import Alert from "@material-ui/lab/Alert";
 import Link from "next/link";
 import { MoreVert } from "@material-ui/icons";
 import { green, purple } from "@material-ui/core/colors";
-import { useEffect, useState } from "react";
-import Gun from "gun";
+import { useState } from "react";
+import Gun from "gun/gun";
+import Head from "next/head";
 
 let theme = createTheme({
   palette: {
@@ -75,12 +76,17 @@ const useStyles = makeStyles((theme) => ({
       flexDirection: "column",
     },
   },
+  formInput: {
+    [theme.breakpoints.down("xs")]: {
+      marginBottom: "0.5rem",
+    },
+  },
 }));
 
 export default function Add() {
   const classes = useStyles();
 
-  const gun = Gun("localhost:8765");
+  const gun = Gun("mvp-gun.herokuapp.com/gun");
 
   let [anchorEl, setAnchorEl] = useState(null);
   let isMenuOpen = Boolean(anchorEl);
@@ -175,6 +181,15 @@ export default function Add() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
+      <Head>
+        <meta charSet="utf-8" />
+        <meta
+          name="Description"
+          content="vime-accounts - add and change Pipirok's vimeworld.ru accounts (for personal use)"
+        />
+        <title>vime-accounts by Pipirok - add or Delete</title>
+        <meta name="theme-color" content="#9c27b0" />
+      </Head>
       <div className={classes.grow}>
         <AppBar className={classes.appbar} position="sticky">
           <Toolbar>
@@ -259,6 +274,7 @@ export default function Add() {
                 type="text"
                 value={formLogin}
                 onChange={handleLoginChange}
+                className={classes.formInput}
               />
               <TextField
                 label="Level"
@@ -269,6 +285,7 @@ export default function Add() {
                 type="number"
                 value={formLevel}
                 onChange={handleLevelChange}
+                className={classes.formInput}
               />
               <Button
                 color="secondary"
@@ -278,10 +295,19 @@ export default function Add() {
                 Add
               </Button>
             </form>
+            <Divider />
+            <Typography gutterBottom variant="h2">
+              Delete an account
+            </Typography>
+            <Divider />
+            <Typography
+              style={{ paddingTop: "0.5rem" }}
+              gutterBottom
+              variant="body1"
+            >
+              Deletion doesn't work yet :-(
+            </Typography>
             <form className={classes.form} onSubmit={deleteAccount}>
-              <Typography variant="body2">
-                ! deletion does not work at the moment.
-              </Typography>
               <TextField
                 label="Login"
                 id="acc-login"
@@ -291,6 +317,7 @@ export default function Add() {
                 type="text"
                 value={delFormLogin}
                 onChange={handleDelLoginChange}
+                className={classes.formInput}
               />
               <Button
                 color="secondary"

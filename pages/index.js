@@ -20,7 +20,8 @@ import Link from "next/link";
 import MoreVert from "@material-ui/icons/MoreVert";
 import { green, purple } from "@material-ui/core/colors";
 import { useEffect, useState } from "react";
-import Gun from "gun";
+import Gun from "gun/gun";
+import Head from "next/head";
 
 let theme = createTheme({
   palette: {
@@ -63,31 +64,30 @@ const useStyles = makeStyles((theme) => ({
 
 export default function Index() {
   const classes = useStyles();
-  const gun = Gun("localhost:8765");
+  const gun = Gun("mvp-gun.herokuapp.com/gun");
 
-  let [data, changeData] = useState([]);
+  let [data, setData] = useState([]);
+  let [allAccounts, setAllAccounts] = useState();
 
   useEffect(async () => {
     let tmp = [];
-    gun.get("vimeAccs").on((d) => {
-      Object.keys(d).map((login) => {
-        gun.get(login).on((acc) => {
-          tmp.push({ login: acc.login, level: acc.level });
-          tmp.sort((acc1, acc2) => acc2.level - acc1.level);
-          changeData(tmp);
-        });
-      });
-    });
-
-    /* .map((acc) => {
-      if (typeof acc.login !== "undefined") {
-        if (tmp.includes({ login: acc.login, level: acc.level })) {
-          return;
-        }
-        tmp.push({ login: acc.login, level: acc.level });
-        tmp.sort((acc1, acc2) => acc2.level - acc1.level);
+    gun.get("vimeAccs").on((data) => {
+      console.log("Hey.");
+      if (typeof data !== "undefined") {
+        Object.keys(data)
+          .filter((key) => key !== "_")
+          .forEach((login) => {
+            gun.get(login).once((acc) => {
+              if (typeof acc.login !== "undefined") {
+                tmp = [...tmp, { login: acc.login, level: acc.level }];
+                tmp.sort((acc1, acc2) => acc2.level - acc1.level);
+                setAllAccounts(tmp);
+                setData(tmp);
+              }
+            });
+          });
       }
-    }); */
+    }, true);
   }, []);
 
   let [anchorEl, setAnchorEl] = useState(null);
@@ -102,28 +102,30 @@ export default function Index() {
   };
 
   const below5Func = () => {
-    let tmp = data.filter((acc) => acc.level < 5);
-    changeData(tmp);
-    setAnchorEl(null);
+    if (typeof data !== "undefined" && data?.length !== 0) {
+      let tmp = data.filter((acc) => acc.level < 5);
+      setData(tmp);
+      setAnchorEl(null);
+    }
   };
 
   const showAll = () => {
-    let tmp = [];
-    gun.get("vimeAccs").on((d) => {
-      Object.keys(d).map((login) => {
-        gun.get(login).on((acc) => {
-          tmp.push({ login: acc.login, level: acc.level });
-          tmp.sort((acc1, acc2) => acc2.level - acc1.level);
-          changeData(tmp);
-        });
-      });
-    });
+    setData(allAccounts);
     setAnchorEl(null);
   };
 
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
+      <Head>
+        <meta charSet="utf-8" />
+        <meta
+          name="Description"
+          content="vime-accounts - add and change Pipirok's vime accounts (for personal use)"
+        />
+        <title>vime-accounts by Pipirok</title>
+        <meta name="theme-color" content="#9c27b0" />
+      </Head>
       <div className={classes.grow}>
         <AppBar className={classes.appbar} position="sticky">
           <Toolbar>
@@ -195,7 +197,7 @@ export default function Index() {
           </Typography>
           <Paper className={classes.paper}>
             <List>
-              {data?.length !== 0 ? (
+              {typeof data !== "undefined" && data.length !== 0 ? (
                 data.map((acc, i) => (
                   <ListItem key={i}>
                     <Typography variant="h4">
