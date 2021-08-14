@@ -23,6 +23,7 @@ import { useEffect, useState } from "react";
 import Gun from "gun";
 import Head from "next/head";
 
+
 let theme = createTheme({
   palette: {
     primary: purple,
@@ -71,7 +72,7 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-export default function Index() {
+function Index({ accs }) {
   const classes = useStyles();
   const gun = Gun("https://mvp-gun.herokuapp.com/gun");
 
@@ -116,6 +117,7 @@ export default function Index() {
       }
     });
   }, []);
+
 
   let [anchorEl, setAnchorEl] = useState(null);
   let isMenuOpen = Boolean(anchorEl);
@@ -295,3 +297,25 @@ export default function Index() {
     </ThemeProvider>
   );
 }
+
+export const getServerSideProps = () => {
+  let accs = [];
+  // Yeah, I have no idea how to manage public data in Gun.js
+  gun.get("vimeAccs").map((acc) => {
+    if (typeof acc.login !== "undefined") {
+      if (accs.includes({ login: acc.login, level: acc.level })) {
+        return;
+      }
+      accs.push({ login: acc.login, level: acc.level });
+      accs.sort((acc1, acc2) => acc2.level - acc1.level);
+    }
+  });
+
+  return {
+    props: {
+      accs,
+    },
+  };
+};
+
+export default Index;

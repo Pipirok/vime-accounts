@@ -23,8 +23,8 @@ import { MoreVert } from "@material-ui/icons";
 import { green, purple } from "@material-ui/core/colors";
 import { useEffect, useState } from "react";
 import Gun from "gun";
-import "gun/lib/unset";
 import Head from "next/head";
+
 
 let theme = createTheme({
   palette: {
@@ -97,6 +97,7 @@ const useStyles = makeStyles((theme) => ({
 export default function Add() {
   const classes = useStyles();
 
+
   const gun = Gun("https://mvp-gun.herokuapp.com/gun");
 
   let [anchorEl, setAnchorEl] = useState(null);
@@ -140,13 +141,13 @@ export default function Add() {
     setErrorSnackbarOpen(false);
   };
 
-  const addAccount = (e) => {
+  const addAccount = async (e) => {
     e.preventDefault();
 
-    // Validation
-    let login = formLogin;
     let level = formLevel;
+    let login = formLogin;
 
+    // Validation
     level = isNaN(parseInt(level)) ? 0 : parseInt(level);
 
     login = login.replace(/[^A-Za-z0-9_]/g, "");
@@ -162,6 +163,7 @@ export default function Add() {
       setErrorSnackbarOpen(true);
       return;
     }
+
 
     let acc = gun.get(login).put({ login, level });
     gun.get("vime-accs").set(acc, () => {
@@ -191,6 +193,7 @@ export default function Add() {
       setSnackbarMessage("Account deleted successfully!");
       setSuccessSnackbarOpen(true);
     });
+
   };
 
   return (
