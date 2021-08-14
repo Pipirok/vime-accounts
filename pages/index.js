@@ -69,8 +69,19 @@ export default function Index() {
   let [data, setData] = useState([]);
   let [allAccounts, setAllAccounts] = useState();
 
-  useEffect(async () => {
+  useEffect(() => {
     let tmp = [];
+    /**
+     * There's a lot happening here:
+     * First of all, deleted or not existing/wrongly added accounts can be undefined
+     * or null, which is why I check this first.
+     * In the data that is returned, every key is a login of an existing account
+     * except for "_", which contains meta data that we don't need.
+     *
+     * Because no proper deletion method worked, I had to
+     * Put login and level of deleted account as null, which I have to check.
+     * That's about it
+     */
     gun.get("vime-accs").on((data) => {
       if (typeof data !== "undefined" && data !== null) {
         Object.keys(data)
