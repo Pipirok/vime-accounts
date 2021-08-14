@@ -21,8 +21,10 @@ import Alert from "@material-ui/lab/Alert";
 import Link from "next/link";
 import { MoreVert } from "@material-ui/icons";
 import { green, purple } from "@material-ui/core/colors";
-import { useState } from "react";
-import axios from "axios";
+import { useEffect, useState } from "react";
+import Gun from "gun";
+import Head from "next/head";
+
 
 let theme = createTheme({
   palette: {
@@ -34,6 +36,7 @@ let theme = createTheme({
 
 theme = responsiveFontSizes(theme);
 
+// Material-ui styling
 const useStyles = makeStyles((theme) => ({
   grow: {
     flexGrow: 1,
@@ -64,21 +67,38 @@ const useStyles = makeStyles((theme) => ({
   },
   form: {
     display: "flex",
-    justifyContent: "space-evenly",
+
     padding: "0.5rem",
     marginBottom: "1rem",
     width: "100%",
     [theme.breakpoints.up("sm")]: {
       flexDirection: "row",
+      justifyContent: "center",
     },
     [theme.breakpoints.down("xs")]: {
       flexDirection: "column",
+      justifyContent: "space-evenly",
     },
+  },
+  formInput: {
+    [theme.breakpoints.down("xs")]: {
+      marginBottom: "0.5rem",
+    },
+    [theme.breakpoints.up("sm")]: {
+      marginRight: "0.25rem",
+    },
+  },
+  link: {
+    textDecoration: "none",
+    color: theme.palette.text.primary,
   },
 }));
 
 export default function Add() {
   const classes = useStyles();
+
+
+  const gun = Gun("https://mvp-gun.herokuapp.com/gun");
 
   let [anchorEl, setAnchorEl] = useState(null);
   let isMenuOpen = Boolean(anchorEl);
@@ -132,26 +152,62 @@ export default function Add() {
 
     login = login.replace(/[^A-Za-z0-9_]/g, "");
 
-    if (login.length <= 0 || login.length >= 17) {
+    if (login.length <= 2) {
       setSnackbarMessage("Login is too long!");
       setErrorSnackbarOpen(true);
       return;
     }
 
-    const response = await (
-      await axios.post("/api/add", { login, level })
-    ).data;
-    console.log(response);
+    if (login.length >= 17) {
+      setSnackbarMessage("Login is too long!");
+      setErrorSnackbarOpen(true);
+      return;
+    }
+
+
+    let acc = gun.get(login).put({ login, level });
+    gun.get("vime-accs").set(acc, () => {
+      setSnackbarMessage("Account added successfully!");
+      setSuccessSnackbarOpen(true);
+    });
   };
 
   const deleteAccount = (e) => {
     e.preventDefault();
-    // TODO: actually add a function to delete an account
+
+    // Validation
+    let login = delFormLogin;
+    login = login.replace(/[^A-Za-z0-9_]/g, "");
+
+    if (login.length <= 0 || login.length >= 17) {
+      setSnackbarMessage("Login is too long/short!");
+      setErrorSnackbarOpen(true);
+      return;
+    }
+
+    /**
+     * .path() raised the "x is not a function" error, and unset
+     * didn't work, so I had to do this. Makeshift, but it works!
+     */
+    gun.get(login).put({ login: null, level: null }, () => {
+      setSnackbarMessage("Account deleted successfully!");
+      setSuccessSnackbarOpen(true);
+    });
+
   };
 
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
+      <Head>
+        <meta charSet="utf-8" />
+        <meta
+          name="Description"
+          content="vime-accounts - add and change Pipirok's vimeworld.ru accounts (for personal use)"
+        />
+        <title>vime-accounts by Pipirok - add or Delete</title>
+        <meta name="theme-color" content="#9c27b0" />
+      </Head>
       <div className={classes.grow}>
         <AppBar className={classes.appbar} position="sticky">
           <Toolbar>
@@ -202,10 +258,16 @@ export default function Add() {
           open={isMenuOpen}
           onClose={handleMenuClose}
         >
-          <Link href="/">
+          <Link href="/" className={classes.link}>
             <MenuItem>View all Accounts</MenuItem>
           </Link>
-          <MenuItem onClick={() => alert("Recaching?")}>Recache</MenuItem>
+          <MenuItem
+            onClick={() =>
+              alert("Recaching is not working yet! Dur get burdan kopoglu")
+            }
+          >
+            Recache
+          </MenuItem>
         </Menu>
       </div>
       <Grid container style={{ flexGrow: 1, paddingTop: "1rem" }}>
@@ -236,6 +298,7 @@ export default function Add() {
                 type="text"
                 value={formLogin}
                 onChange={handleLoginChange}
+                className={classes.formInput}
               />
               <TextField
                 label="Level"
@@ -246,6 +309,7 @@ export default function Add() {
                 type="number"
                 value={formLevel}
                 onChange={handleLevelChange}
+                className={classes.formInput}
               />
               <Button
                 color="secondary"
@@ -255,10 +319,20 @@ export default function Add() {
                 Add
               </Button>
             </form>
+            <Divider />
+            <Typography gutterBottom variant="h2">
+              Delete an account
+            </Typography>
+            <Divider />
+            <Typography
+              style={{ paddingTop: "0.5rem" }}
+              gutterBottom
+              variant="body1"
+            >
+              Enter the login you want to delete, and click the "delete" button.
+              If the acc exists, it will be deleted.
+            </Typography>
             <form className={classes.form} onSubmit={deleteAccount}>
-              <Typography variant="body2">
-                ! deletion does not work at the moment.
-              </Typography>
               <TextField
                 label="Login"
                 id="acc-login"
@@ -268,6 +342,7 @@ export default function Add() {
                 type="text"
                 value={delFormLogin}
                 onChange={handleDelLoginChange}
+                className={classes.formInput}
               />
               <Button
                 color="secondary"

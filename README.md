@@ -5,19 +5,20 @@ A WIP project in [Next.js](https://nextjs.org) for managing accounts on [vimewor
 ## Features:
 
 - Displaying all acounts and their levels
-- A local database to cache information on all added accounts
-- A route to recache all accounts in a local database
-- Separate table for accounts that are yet to be registered
+- A route to recache all accounts in a local database (WIP)
 - Select a random account
 - View all acounts with level less than 5
-- Select a random account whose level is less than 5
+- Distributed database - [GUN](https://gun.eco)
 
-You can add your own GunDB peer, by replacing the Gun arguments list with your own GunDB relay peer address
+
+Huge thanks to [Mark Nadal](https://github.com/amark) and [GUN](https://gun.eco) community for creating such an amazing database!
 
 ## How to use:
 
 Clone the repo and install all dependencies:
 
-`` npm install ``
+`npm install`
 
-And it's ready to go.
+If you want your own system, then just change `vime-accs` in Gun initialiser to whatever you want, or add your own relay peers!
+You can add your own GunDB peer, by replacing the Gun arguments list with your own GunDB relay peer address.
+
