@@ -21,8 +21,9 @@ import Alert from "@material-ui/lab/Alert";
 import Link from "next/link";
 import { MoreVert } from "@material-ui/icons";
 import { green, purple } from "@material-ui/core/colors";
-import { useState } from "react";
-import Gun from "gun/gun";
+import { useEffect, useState } from "react";
+import Gun from "gun";
+import "gun/lib/unset";
 import Head from "next/head";
 
 let theme = createTheme({
@@ -65,20 +66,25 @@ const useStyles = makeStyles((theme) => ({
   },
   form: {
     display: "flex",
-    justifyContent: "space-evenly",
+
     padding: "0.5rem",
     marginBottom: "1rem",
     width: "100%",
     [theme.breakpoints.up("sm")]: {
       flexDirection: "row",
+      justifyContent: "center",
     },
     [theme.breakpoints.down("xs")]: {
       flexDirection: "column",
+      justifyContent: "space-evenly",
     },
   },
   formInput: {
     [theme.breakpoints.down("xs")]: {
       marginBottom: "0.5rem",
+    },
+    [theme.breakpoints.up("sm")]: {
+      marginRight: "0.25rem",
     },
   },
 }));
@@ -86,7 +92,16 @@ const useStyles = makeStyles((theme) => ({
 export default function Add() {
   const classes = useStyles();
 
-  const gun = Gun("mvp-gun.herokuapp.com/gun");
+  const gun = Gun("https://mvp-gun.herokuapp.com/gun");
+
+  /**
+   * For some reason, unmounting doesn't appear to be working
+   * with next.js lazy-loading links,
+   * so the only choice is to unsubscribe from updates on this page
+   */
+  useEffect(() => {
+    gun.get("vime-accs").off();
+  }, []);
 
   let [anchorEl, setAnchorEl] = useState(null);
   let isMenuOpen = Boolean(anchorEl);
@@ -152,8 +167,8 @@ export default function Add() {
       return;
     }
 
-    let tmp = gun.get(login).put({ login, level });
-    gun.get("vimeAccs").set(tmp, () => {
+    let acc = gun.get(login).put({ login, level });
+    gun.get("vime-accs").set(acc, () => {
       setSnackbarMessage("Account added successfully!");
       setSuccessSnackbarOpen(true);
     });
@@ -172,10 +187,14 @@ export default function Add() {
       return;
     }
 
-    let tmp = gun.get(login).put({ login: null, level: null });
-    gun.get("vimeAccs").set(tmp);
-    setSnackbarMessage("Account deleted successfully!");
-    setSuccessSnackbarOpen(true);
+    /**
+     * .path() raised the "x is not a function" error, and unset
+     * didn't work, so I had to do this. Makeshift, but it works!
+     */
+    gun.get(login).put({ login: null, level: null }, () => {
+      setSnackbarMessage("Account deleted successfully!");
+      setSuccessSnackbarOpen(true);
+    });
   };
 
   return (
@@ -305,7 +324,8 @@ export default function Add() {
               gutterBottom
               variant="body1"
             >
-              Deletion doesn't work yet :-(
+              Enter the login you want to delete, and click the "delete" button.
+              If the acc exists, it will be deleted.
             </Typography>
             <form className={classes.form} onSubmit={deleteAccount}>
               <TextField

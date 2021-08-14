@@ -20,7 +20,7 @@ import Link from "next/link";
 import MoreVert from "@material-ui/icons/MoreVert";
 import { green, purple } from "@material-ui/core/colors";
 import { useEffect, useState } from "react";
-import Gun from "gun/gun";
+import Gun from "gun";
 import Head from "next/head";
 
 let theme = createTheme({
@@ -64,21 +64,20 @@ const useStyles = makeStyles((theme) => ({
 
 export default function Index() {
   const classes = useStyles();
-  const gun = Gun("mvp-gun.herokuapp.com/gun");
+  const gun = Gun("https://mvp-gun.herokuapp.com/gun");
 
   let [data, setData] = useState([]);
   let [allAccounts, setAllAccounts] = useState();
 
   useEffect(async () => {
     let tmp = [];
-    gun.get("vimeAccs").on((data) => {
-      console.log("Hey.");
-      if (typeof data !== "undefined") {
+    gun.get("vime-accs").on((data) => {
+      if (typeof data !== "undefined" && data !== null) {
         Object.keys(data)
           .filter((key) => key !== "_")
           .forEach((login) => {
             gun.get(login).once((acc) => {
-              if (typeof acc.login !== "undefined") {
+              if (typeof acc?.login !== "undefined" && acc?.login !== null) {
                 tmp = [...tmp, { login: acc.login, level: acc.level }];
                 tmp.sort((acc1, acc2) => acc2.level - acc1.level);
                 setAllAccounts(tmp);
