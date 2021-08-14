@@ -25,7 +25,6 @@ import { useEffect, useState } from "react";
 import Gun from "gun";
 import Head from "next/head";
 
-
 let theme = createTheme({
   palette: {
     primary: purple,
@@ -97,8 +96,15 @@ const useStyles = makeStyles((theme) => ({
 export default function Add() {
   const classes = useStyles();
 
-
   const gun = Gun("https://mvp-gun.herokuapp.com/gun");
+
+  useEffect(() => {
+    /**
+     * For some reason, useEffect unmounting doesn't work in nextjs,
+     * so I am unsubscribing from unneeded updates here.
+     */
+    gun.get("vime-accs").off();
+  }, []);
 
   let [anchorEl, setAnchorEl] = useState(null);
   let isMenuOpen = Boolean(anchorEl);
@@ -141,7 +147,7 @@ export default function Add() {
     setErrorSnackbarOpen(false);
   };
 
-  const addAccount = async (e) => {
+  const addAccount = (e) => {
     e.preventDefault();
 
     let level = formLevel;
@@ -163,7 +169,6 @@ export default function Add() {
       setErrorSnackbarOpen(true);
       return;
     }
-
 
     let acc = gun.get(login).put({ login, level });
     gun.get("vime-accs").set(acc, () => {
@@ -193,7 +198,6 @@ export default function Add() {
       setSnackbarMessage("Account deleted successfully!");
       setSuccessSnackbarOpen(true);
     });
-
   };
 
   return (

@@ -23,7 +23,6 @@ import { useEffect, useState } from "react";
 import Gun from "gun";
 import Head from "next/head";
 
-
 let theme = createTheme({
   palette: {
     primary: purple,
@@ -66,13 +65,16 @@ const useStyles = makeStyles((theme) => ({
     display: "flex",
     flexDirection: "row",
     padding: "0.75rem",
+    [theme.breakpoints.down("xs")]: {
+      display: "none",
+    },
   },
   randomButton: {
     marginRight: "0.25rem",
   },
 }));
 
-function Index({ accs }) {
+export default function Index() {
   const classes = useStyles();
   const gun = Gun("https://mvp-gun.herokuapp.com/gun");
 
@@ -117,7 +119,6 @@ function Index({ accs }) {
       }
     });
   }, []);
-
 
   let [anchorEl, setAnchorEl] = useState(null);
   let isMenuOpen = Boolean(anchorEl);
@@ -260,6 +261,7 @@ function Index({ accs }) {
           </Typography>
           <div className={classes.randomButtonContainer}>
             <Button
+              size="large"
               onClick={selectRandom}
               variant="contained"
               color="secondary"
@@ -268,6 +270,7 @@ function Index({ accs }) {
               Random
             </Button>
             <Button
+              size="large"
               onClick={selectRandomBelow5}
               variant="outlined"
               color="secondary"
@@ -297,25 +300,3 @@ function Index({ accs }) {
     </ThemeProvider>
   );
 }
-
-export const getServerSideProps = () => {
-  let accs = [];
-  // Yeah, I have no idea how to manage public data in Gun.js
-  gun.get("vimeAccs").map((acc) => {
-    if (typeof acc.login !== "undefined") {
-      if (accs.includes({ login: acc.login, level: acc.level })) {
-        return;
-      }
-      accs.push({ login: acc.login, level: acc.level });
-      accs.sort((acc1, acc2) => acc2.level - acc1.level);
-    }
-  });
-
-  return {
-    props: {
-      accs,
-    },
-  };
-};
-
-export default Index;
