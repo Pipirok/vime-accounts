@@ -36,6 +36,7 @@ let theme = createTheme({
 
 theme = responsiveFontSizes(theme);
 
+// Material-ui styling
 const useStyles = makeStyles((theme) => ({
   grow: {
     flexGrow: 1,
@@ -87,21 +88,16 @@ const useStyles = makeStyles((theme) => ({
       marginRight: "0.25rem",
     },
   },
+  link: {
+    textDecoration: "none",
+    color: theme.palette.text.primary,
+  },
 }));
 
 export default function Add() {
   const classes = useStyles();
 
   const gun = Gun("https://mvp-gun.herokuapp.com/gun");
-
-  /**
-   * For some reason, unmounting doesn't appear to be working
-   * with next.js lazy-loading links,
-   * so the only choice is to unsubscribe from updates on this page
-   */
-  useEffect(() => {
-    gun.get("vime-accs").off();
-  }, []);
 
   let [anchorEl, setAnchorEl] = useState(null);
   let isMenuOpen = Boolean(anchorEl);
@@ -259,10 +255,16 @@ export default function Add() {
           open={isMenuOpen}
           onClose={handleMenuClose}
         >
-          <Link href="/">
+          <Link href="/" className={classes.link}>
             <MenuItem>View all Accounts</MenuItem>
           </Link>
-          <MenuItem onClick={() => alert("Recaching?")}>Recache</MenuItem>
+          <MenuItem
+            onClick={() =>
+              alert("Recaching is not working yet! Dur get burdan kopoglu")
+            }
+          >
+            Recache
+          </MenuItem>
         </Menu>
       </div>
       <Grid container style={{ flexGrow: 1, paddingTop: "1rem" }}>

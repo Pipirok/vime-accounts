@@ -33,6 +33,7 @@ let theme = createTheme({
 
 theme = responsiveFontSizes(theme);
 
+// Material-ui styling
 const useStyles = makeStyles((theme) => ({
   paper: {
     width: "100%",
@@ -60,11 +61,27 @@ const useStyles = makeStyles((theme) => ({
     textDecoration: "none",
     color: theme.palette.text.primary,
   },
+  randomButtonContainer: {
+    display: "flex",
+    flexDirection: "row",
+    padding: "0.75rem",
+  },
+  randomButton: {
+    marginRight: "0.25rem",
+  },
 }));
 
 export default function Index() {
   const classes = useStyles();
   const gun = Gun("https://mvp-gun.herokuapp.com/gun");
+
+  /**
+   * data contains accounts that are shown on the screen,
+   * while allAccounts contains all of the accounts(duh).
+   * Why? So that random selecting, and reverting back to all accounts
+   * is painless and without any latency whatsoever.
+   * As in, I won't have to fetch all of the accounts again.
+   */
 
   let [data, setData] = useState([]);
   let [allAccounts, setAllAccounts] = useState();
@@ -82,7 +99,7 @@ export default function Index() {
      * Put login and level of deleted account as null, which I have to check.
      * That's about it
      */
-    gun.get("vime-accs").on((data) => {
+    gun.get("vime-accs").once((data) => {
       if (typeof data !== "undefined" && data !== null) {
         Object.keys(data)
           .filter((key) => key !== "_")
@@ -97,7 +114,7 @@ export default function Index() {
             });
           });
       }
-    }, true);
+    });
   }, []);
 
   let [anchorEl, setAnchorEl] = useState(null);
@@ -122,6 +139,34 @@ export default function Index() {
   const showAll = () => {
     setData(allAccounts);
     setAnchorEl(null);
+  };
+
+  const selectRandom = () => {
+    if (allAccounts.length !== 0) {
+      let randomAcc =
+        allAccounts[Math.floor(Math.random() * allAccounts.length)];
+
+      setData([randomAcc]);
+      setAnchorEl(null);
+    } else {
+      alert("Dalped, first add some accounts or select all");
+    }
+  };
+
+  const selectRandomBelow5 = () => {
+    if (allAccounts.length !== 0) {
+      let tmp = allAccounts.filter((acc) => acc.level < 5);
+      if (tmp.length === 0) {
+        alert("No accounts below level 5");
+      } else {
+        let randomAcc = tmp[Math.floor(Math.random() * tmp.length)];
+
+        setData([randomAcc]);
+        setAnchorEl(null);
+      }
+    } else {
+      alert("Dalped, first add some accounts or select all");
+    }
   };
 
   return (
@@ -182,6 +227,7 @@ export default function Index() {
             </IconButton>
           </Toolbar>
         </AppBar>
+        {/* menu */}
         <Menu
           id="primary-account-actions-menu"
           anchorEl={anchorEl}
@@ -197,14 +243,37 @@ export default function Index() {
 
           <MenuItem onClick={below5Func}>Accounts below lvl 5</MenuItem>
           <MenuItem onClick={showAll}>Show all</MenuItem>
+          <MenuItem onClick={selectRandom}>Select random acc</MenuItem>
+          <MenuItem onClick={selectRandomBelow5}>
+            Select random below 5
+          </MenuItem>
         </Menu>
       </div>
       <Grid container style={{ flexGrow: 1, paddingTop: "1rem" }}>
         <Grid item xs={1} md={2} lg={3} xl={4} />
         <Grid item style={{ paddingTop: "1rem" }}>
+          {/* Random buttons */}
           <Typography variant="h2" component="h2">
             Accounts:
           </Typography>
+          <div className={classes.randomButtonContainer}>
+            <Button
+              onClick={selectRandom}
+              variant="contained"
+              color="secondary"
+              className={classes.randomButton}
+            >
+              Random
+            </Button>
+            <Button
+              onClick={selectRandomBelow5}
+              variant="outlined"
+              color="secondary"
+              className={classes.randomButton}
+            >
+              Random below 5
+            </Button>
+          </div>
           <Paper className={classes.paper}>
             <List>
               {typeof data !== "undefined" && data.length !== 0 ? (
