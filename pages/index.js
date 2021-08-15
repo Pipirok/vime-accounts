@@ -42,8 +42,15 @@ theme = responsiveFontSizes(theme);
 // Material-ui styling
 const useStyles = makeStyles((theme) => ({
   paper: {
+    flexGrow: 1,
+    [theme.breakpoints.up("md")]: {
+      padding: "0.5rem",
+    },
+  },
+  paperContainer: {
+    display: "flex",
+    flexDirection: "row",
     width: "100%",
-    padding: "0.5rem",
   },
   grow: {
     flexGrow: 1,
@@ -71,7 +78,7 @@ const useStyles = makeStyles((theme) => ({
     display: "flex",
     flexDirection: "row",
     padding: "0.75rem",
-    [theme.breakpoints.down("xs")]: {
+    [theme.breakpoints.down("sm")]: {
       display: "none",
     },
   },
@@ -308,29 +315,33 @@ export default function Index() {
               Random below 5
             </Button>
           </div>
-          <Paper className={classes.paper}>
-            <List>
-              {typeof data !== "undefined" && data.length !== 0 ? (
-                data.map((acc, i) => (
-                  <ListItem key={i}>
-                    <IconButton
-                      onClick={() => {
-                        setDelLogin(acc.login);
-                        setIsDialogOpen(true);
-                      }}
-                    >
-                      <DeleteForever color="error" fontSize="large" />
-                    </IconButton>
-                    <Typography variant="h4">
-                      {`${acc.login} - ${acc.level}`}
-                    </Typography>
-                  </ListItem>
-                ))
-              ) : (
-                <Typography variant="h4">Nothing here!</Typography>
-              )}
-            </List>
-          </Paper>
+          <div className={classes.paperContainer}>
+            <Paper className={classes.paper}>
+              <List>
+                {typeof data !== "undefined" && data.length !== 0 ? (
+                  data.map((acc, i) => (
+                    <ListItem key={i}>
+                      <IconButton
+                        onClick={() => {
+                          setDelLogin(acc.login);
+                          setIsDialogOpen(true);
+                        }}
+                      >
+                        <DeleteForever color="error" fontSize="large" />
+                      </IconButton>
+                      <Typography variant="h4">
+                        {`${acc.login} - ${acc.level}`}
+                      </Typography>
+                    </ListItem>
+                  ))
+                ) : (
+                  <Typography variant="h4" style={{ padding: "0.5rem" }}>
+                    Nothing here!
+                  </Typography>
+                )}
+              </List>
+            </Paper>
+          </div>
           <Dialog
             open={isDialogOpen}
             onClose={() => {
