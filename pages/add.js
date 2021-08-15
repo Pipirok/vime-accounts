@@ -159,7 +159,7 @@ export default function Add() {
     login = login.replace(/[^A-Za-z0-9_]/g, "");
 
     if (login.length <= 2) {
-      setSnackbarMessage("Login is too long!");
+      setSnackbarMessage("Login is too short!");
       setErrorSnackbarOpen(true);
       return;
     }
@@ -184,8 +184,13 @@ export default function Add() {
     let login = delFormLogin;
     login = login.replace(/[^A-Za-z0-9_]/g, "");
 
-    if (login.length <= 0 || login.length >= 17) {
-      setSnackbarMessage("Login is too long/short!");
+    if (login.length <= 0) {
+      setSnackbarMessage("Login is too short!");
+      setErrorSnackbarOpen(true);
+      return;
+    }
+    if (login.length >= 17) {
+      setSnackbarMessage("Login is too long!");
       setErrorSnackbarOpen(true);
       return;
     }
@@ -254,7 +259,7 @@ export default function Add() {
         </AppBar>
         {/* menu */}
         <Menu
-          id="primary-account-actions-menu"
+          id="primary-actions-menu"
           anchorEl={anchorEl}
           anchorOrigin={{ vertical: "top", horizontal: "right" }}
           keepMounted

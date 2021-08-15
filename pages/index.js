@@ -15,9 +15,15 @@ import {
   Toolbar,
   Button,
   IconButton,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
 } from "@material-ui/core";
 import Link from "next/link";
 import MoreVert from "@material-ui/icons/MoreVert";
+import DeleteForever from "@material-ui/icons/DeleteForever";
 import { green, purple } from "@material-ui/core/colors";
 import { useEffect, useState } from "react";
 import Gun from "gun";
@@ -37,7 +43,7 @@ theme = responsiveFontSizes(theme);
 const useStyles = makeStyles((theme) => ({
   paper: {
     width: "100%",
-    padding: "1rem",
+    padding: "0.5rem",
   },
   grow: {
     flexGrow: 1,
@@ -123,6 +129,10 @@ export default function Index() {
   let [anchorEl, setAnchorEl] = useState(null);
   let isMenuOpen = Boolean(anchorEl);
 
+  let [isDialogOpen, setIsDialogOpen] = useState(false);
+  // Login that is to be deleted, will be shown in the Dialog
+  let [delLogin, setDelLogin] = useState("");
+
   const handleMenuOpen = (e) => {
     setAnchorEl(e.currentTarget);
   };
@@ -170,6 +180,25 @@ export default function Index() {
     } else {
       alert("Dalped, first add some accounts or select all");
     }
+  };
+
+  const deleteAccount = (login) => {
+    // TODO: optimize this, by either subscribing to changes, or doing something else
+    gun.get(login).put({ login: null, level: null }, () => {
+      setAllAccounts(allAccounts.filter((acc) => acc.login != login));
+      setData(data.filter((acc) => acc.login != login));
+    });
+  };
+
+  const cancelDialog = () => {
+    setIsDialogOpen(false);
+    setDelLogin("");
+  };
+
+  const deleteDialog = () => {
+    deleteAccount(delLogin);
+    setIsDialogOpen(false);
+    setDelLogin("");
   };
 
   return (
@@ -232,7 +261,7 @@ export default function Index() {
         </AppBar>
         {/* menu */}
         <Menu
-          id="primary-account-actions-menu"
+          id="primary-actions-menu"
           anchorEl={anchorEl}
           anchorOrigin={{ vertical: "top", horizontal: "right" }}
           keepMounted
@@ -284,6 +313,14 @@ export default function Index() {
               {typeof data !== "undefined" && data.length !== 0 ? (
                 data.map((acc, i) => (
                   <ListItem key={i}>
+                    <IconButton
+                      onClick={() => {
+                        setDelLogin(acc.login);
+                        setIsDialogOpen(true);
+                      }}
+                    >
+                      <DeleteForever color="error" fontSize="large" />
+                    </IconButton>
                     <Typography variant="h4">
                       {`${acc.login} - ${acc.level}`}
                     </Typography>
@@ -294,6 +331,28 @@ export default function Index() {
               )}
             </List>
           </Paper>
+          <Dialog
+            open={isDialogOpen}
+            onClose={() => {
+              setIsDialogOpen(false);
+            }}
+          >
+            <DialogTitle>Delete account {delLogin}?</DialogTitle>
+            <DialogContent>
+              <DialogContentText>
+                Click 'Delete' to permamently delete {delLogin} from the list or
+                'Cancel' to abort. You can always re-enter it from the add page.
+              </DialogContentText>
+            </DialogContent>
+            <DialogActions>
+              <Button color="secondary" onClick={cancelDialog}>
+                Cancel
+              </Button>
+              <Button style={{ color: "red" }} onClick={deleteDialog}>
+                Delete
+              </Button>
+            </DialogActions>
+          </Dialog>
         </Grid>
         <Grid item xs={1} md={2} lg={3} xl={4} />
       </Grid>
