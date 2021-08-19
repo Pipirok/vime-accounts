@@ -1,3 +1,9 @@
+/**
+ * TODO: maybe add lazy-loading, if the account list gets too long.
+ * Also, probably should divide the pages into reusable components.
+ * As I'm writing this, there are only 2 pages, which is why I didn't bother.
+ * */
+
 import {
   Typography,
   responsiveFontSizes,
@@ -85,11 +91,16 @@ const useStyles = makeStyles((theme) => ({
   randomButton: {
     marginRight: "0.25rem",
   },
+  listItem: {
+    [theme.breakpoints.down("sm")]: {
+      paddingLeft: "0 !important",
+    },
+  },
 }));
 
 export default function Index() {
   const classes = useStyles();
-  const gun = Gun("https://mvp-gun.herokuapp.com/gun");
+  const gun = Gun();
 
   /**
    * data contains accounts that are shown on the screen,
@@ -149,8 +160,8 @@ export default function Index() {
   };
 
   const below5Func = () => {
-    if (typeof data !== "undefined" && data?.length !== 0) {
-      let tmp = data.filter((acc) => acc.level < 5);
+    if (typeof allAccounts !== "undefined" && allAccounts?.length !== 0) {
+      let tmp = allAccounts.filter((acc) => acc.level < 5);
       setData(tmp);
       setAnchorEl(null);
     }
@@ -162,7 +173,7 @@ export default function Index() {
   };
 
   const selectRandom = () => {
-    if (allAccounts.length !== 0) {
+    if (typeof allAccounts !== "undefined" && allAccounts?.length !== 0) {
       let randomAcc =
         allAccounts[Math.floor(Math.random() * allAccounts.length)];
 
@@ -174,7 +185,7 @@ export default function Index() {
   };
 
   const selectRandomBelow5 = () => {
-    if (allAccounts.length !== 0) {
+    if (typeof allAccounts !== "undefined" && allAccounts?.length !== 0) {
       let tmp = allAccounts.filter((acc) => acc.level < 5);
       if (tmp.length === 0) {
         alert("No accounts below level 5");
@@ -320,7 +331,7 @@ export default function Index() {
               <List>
                 {typeof data !== "undefined" && data.length !== 0 ? (
                   data.map((acc, i) => (
-                    <ListItem key={i}>
+                    <ListItem className={classes.listItem} key={i}>
                       <IconButton
                         onClick={() => {
                           setDelLogin(acc.login);

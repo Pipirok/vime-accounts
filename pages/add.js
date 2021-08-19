@@ -24,6 +24,7 @@ import { green, purple } from "@material-ui/core/colors";
 import { useEffect, useState } from "react";
 import Gun from "gun";
 import Head from "next/head";
+import axios from "axios";
 
 let theme = createTheme({
   palette: {
@@ -96,7 +97,7 @@ const useStyles = makeStyles((theme) => ({
 export default function Add() {
   const classes = useStyles();
 
-  const gun = Gun("https://mvp-gun.herokuapp.com/gun");
+  const gun = Gun();
 
   useEffect(() => {
     /**
@@ -114,6 +115,7 @@ export default function Add() {
 
   let [snackbarMessage, setSnackbarMessage] = useState(null);
 
+  // User input values
   let [formLogin, setFormLogin] = useState("");
   let [formLevel, setFormLevel] = useState("");
   let [delFormLogin, setDelFormLogin] = useState("");
@@ -196,12 +198,149 @@ export default function Add() {
     }
 
     /**
-     * .path() raised the "x is not a function" error, and unset
+     * .path() raised the "x is not a function" error, and .unset()
      * didn't work, so I had to do this. Makeshift, but it works!
+     *
+     * Once/if the documents are updated, will definitely fix this.
      */
-    gun.get(login).put({ login: null, level: null }, () => {
+    let accToDelete = gun.get(login);
+
+    accToDelete.put({ login: null, level: null }, () => {
       setSnackbarMessage("Account deleted successfully!");
       setSuccessSnackbarOpen(true);
+      gun.get("vime-accs").once((data) => console.log(data));
+    });
+  };
+
+  const recache = () => {
+    let accs = [];
+
+    /**
+     * GunDB doesn't work with `await` (as I'm writing this),
+     * so I am putting everything in one callback.
+     * However, I will be using proper `async/await` inside of it.
+     */
+
+    gun.get("vime-accs").once(async (data) => {
+      if (typeof data !== "undefined" && data !== null) {
+        Object.keys(data)
+          .filter((key) => key !== "_")
+          .forEach((acc) => {
+            if (typeof acc !== "undefined" && acc.login !== null) {
+              accs.push(acc);
+            }
+          });
+      }
+
+      if (accs.length > 0) {
+        /**
+         * This was the only way to get the C-style division working...
+         * There probably is a better way to get a full number when doing divising.
+         * Also, main operations start here.
+         *
+         * Now, to explain all of this:
+         * The API I'm calling supports info on up to 50 accounts at once.
+         * So, in order not to waste requests, I am going to get as much data as I
+         * can in a single request.
+         * For this though, I need to iterate over my accounts array in chunks of 50.
+         * This code does exactly that.
+         **/
+
+        /**
+         * for loops in react work a bit janky, so TODO: test if this works properly.
+         * If it doesn't, replace it with something like `Array(parseInt((accs.length / 50).toFixed()) + 1).forEach()....
+         */
+        for (let i = 0; i < parseInt((accs.length / 50).toFixed()) + 1; i++) {
+          let tmp = accs.slice(50 * i, 50 + 50 * i);
+          try {
+            // Looks a bit ugly, but without using the second `await` it returns `undefined`
+            let newAccData = await (
+              await axios.get(
+                `https://api.vimeworld.ru/user/name/${tmp.join(",")}`
+              )
+            ).data;
+
+            if (newAccData?.length === 0 && typeof newAccData === "undefined") {
+              throw new Error("No accounts found!");
+            }
+
+            /**
+             * Dilemma: logins returned from API are not always written the same
+             * as the ones stored by GunDB. However, I want to retain the ones in
+             * GunDB BUT also update account info. There are two possible solutions:
+             * 1. Fetch the login from API, as well as level (will probably do that later)
+             * 2. Iterate through both arrays (logins from GunDB and info returned from API)
+             *    at the same time. If any account is missing from API response, then it means that
+             *    it isn't registered. I'll put level=-1 for them, just to tell them apart from the rest.
+             */
+
+            let existingLoginsIndex = 0,
+              returnedLoginsIndex = 0;
+            /**
+             * Sanity check: don't want to deal with any latency, so going to fill it up first,
+             * and update everything through GunDB after that.
+             */
+            let updatedAccs = [];
+            while (existingLoginsIndex < accs.length) {
+              /**
+               * Initially, I wanted to simply loop through both arrays, and update accounts
+               * after it finished filling up new details. However, as I'm writing this,
+               * there's no working way to remove an element from a set in GunDB.
+               * Because of that, and the fact that `accs` holds even the deleted logins,
+               * I'll have get each of them individually, in every iteration of the loop.
+               * All of this, just because .unset() doesn't work and .path() is deprecated.
+               */
+              let existingLogin = accs[existingLoginsIndex];
+              let returnedLogin =
+                newAccData[returnedLoginsIndex].username || "";
+
+              gun.get(existingLogin).once((acc) => {
+                if (acc.login === null) {
+                  existingLogin++;
+                  return;
+                }
+                if (
+                  existingLogin.toLowerCase() === returnedLogin.toLowerCase()
+                ) {
+                  /* updatedAccs.push({
+                    login: existingLogin,
+                    level: newAccData[returnedLoginsIndex].level,
+                  }); */
+                  console.log(`Matched - ${existingLogin}`);
+                  existingLoginsIndex++;
+                  returnedLoginsIndex++;
+                  return;
+                } else {
+                  // updatedAccs.push({ login: existingLogin, level: -1 });
+                  console.log(`Didn't match... - ${existingLogin}`);
+                  existingLoginsIndex++;
+                  return;
+                }
+              });
+            }
+
+            setSnackbarMessage("Info fetched succesfully! Updating...");
+            setSuccessSnackbarOpen(true);
+            updatedAccs.forEach((acc) => {
+              gun.get(acc.login).put({ login: acc.login, level: acc.level });
+            });
+          } catch (e) {
+            /**
+             * All errors are going to end up here, thanks to modern JavaScript.
+             * If not for .catch() though, not all errors would have .message property.
+             * This isn't handling them, but since I'm probably going to be the only one
+             * to use this site, all I need is to see some info on the error that happened.
+             */
+            setSnackbarMessage(`Something went wrong - ${e.message}
+            Try recaching again.
+            `);
+            setErrorSnackbarOpen(true);
+          }
+        }
+      } else {
+        setSnackbarMessage("There are no accounts - start by adding some!");
+        setErrorSnackbarOpen(true);
+      }
     });
   };
 
@@ -239,9 +378,7 @@ export default function Add() {
                 className={classes.button}
                 variant="outlined"
                 color="secondary"
-                onClick={() => {
-                  alert("Rechaching?");
-                }}
+                onClick={recache}
               >
                 Recache
               </Button>
@@ -270,13 +407,7 @@ export default function Add() {
           <Link href="/" className={classes.link}>
             <MenuItem>View all Accounts</MenuItem>
           </Link>
-          <MenuItem
-            onClick={() =>
-              alert("Recaching is not working yet! Dur get burdan kopoglu")
-            }
-          >
-            Recache
-          </MenuItem>
+          <MenuItem onClick={recache}>Recache</MenuItem>
         </Menu>
       </div>
       <Grid container style={{ flexGrow: 1, paddingTop: "1rem" }}>
@@ -365,9 +496,10 @@ export default function Add() {
         </Grid>
         <Grid item xs={1} md={2} lg={3} xl={4} />
       </Grid>
+      {/* Just some snackbars not rendered by default */}
       <Snackbar
         open={successSnackbarOpen}
-        autoHideDuration={6000}
+        autoHideDuration={4000}
         onClose={handleSuccessSnackbarClose}
       >
         <Alert
@@ -380,7 +512,7 @@ export default function Add() {
       </Snackbar>
       <Snackbar
         open={errorSnackbarOpen}
-        autoHideDuration={6000}
+        autoHideDuration={4000}
         onClose={handleErrorSnackbarClose}
       >
         <Alert
