@@ -16,6 +16,11 @@ import {
   Grid,
   Divider,
   TextField,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
 } from "@material-ui/core";
 import Alert from "@material-ui/lab/Alert";
 import Link from "next/link";
@@ -104,7 +109,7 @@ export default function Add() {
      * For some reason, useEffect unmounting doesn't work in nextjs,
      * so I am unsubscribing from unneeded updates here.
      */
-    gun.get("vime-accs").off();
+    gun.get("accs").off();
   }, []);
 
   let [anchorEl, setAnchorEl] = useState(null);
@@ -115,9 +120,12 @@ export default function Add() {
 
   let [snackbarMessage, setSnackbarMessage] = useState(null);
 
+  let [isDialogOpen, setIsDialogOpen] = useState(false);
+  let [dialogLogin, setDialogLogin] = useState(null);
+  let [dialogLevel, setDialogLevel] = useState(null);
+
   // User input values
   let [formLogin, setFormLogin] = useState("");
-  let [formLevel, setFormLevel] = useState("");
   let [delFormLogin, setDelFormLogin] = useState("");
 
   const handleLoginChange = (e) => {
@@ -126,10 +134,6 @@ export default function Add() {
 
   const handleDelLoginChange = (e) => {
     setDelFormLogin(e.target.value);
-  };
-
-  const handleLevelChange = (e) => {
-    setFormLevel(e.target.value);
   };
 
   const handleMenuOpen = (e) => {
@@ -149,14 +153,12 @@ export default function Add() {
     setErrorSnackbarOpen(false);
   };
 
-  const addAccount = (e) => {
+  const addAccount = async (e) => {
     e.preventDefault();
 
-    let level = formLevel;
     let login = formLogin;
 
     // Validation
-    level = isNaN(parseInt(level)) ? 0 : parseInt(level);
 
     login = login.replace(/[^A-Za-z0-9_]/g, "");
 
@@ -172,9 +174,31 @@ export default function Add() {
       return;
     }
 
-    let acc = gun.get(login).put({ login, level });
-    gun.get("vime-accs").set(acc, () => {
-      setSnackbarMessage("Account added successfully!");
+    // Fetching account details from vimeworld in case it exists
+    let fetchedDetails = await (
+      await axios.get(`https://api.vimeworld.ru/user/name/${login}`)
+    ).data;
+
+    if (fetchedDetails.length === 0) {
+      setDialogLevel(-1);
+      setDialogLogin(login);
+      setIsDialogOpen(true);
+    } else {
+      setDialogLevel(fetchedDetails[0].level);
+      setDialogLogin(fetchedDetails[0].username);
+      setIsDialogOpen(true);
+    }
+  };
+
+  const confirmDialog = () => {
+    setIsDialogOpen(false);
+    setDialogLevel(null);
+    setDialogLogin(null);
+    let acc = gun
+      .get(dialogLevel)
+      .put({ login: dialogLogin, level: dialogLevel });
+    gun.get("accs").set(acc, () => {
+      setSnackbarMessage(`Account ${dialogLogin} added!`);
       setSuccessSnackbarOpen(true);
     });
   };
@@ -208,7 +232,7 @@ export default function Add() {
     accToDelete.put({ login: null, level: null }, () => {
       setSnackbarMessage("Account deleted successfully!");
       setSuccessSnackbarOpen(true);
-      gun.get("vime-accs").once((data) => console.log(data));
+      gun.get("accs").once((data) => console.log(data));
     });
   };
 
@@ -221,7 +245,7 @@ export default function Add() {
      * However, I will be using proper `async/await` inside of it.
      */
 
-    gun.get("vime-accs").once(async (data) => {
+    gun.get("accs").once(async (data) => {
       if (typeof data !== "undefined" && data !== null) {
         Object.keys(data)
           .filter((key) => key !== "_")
@@ -260,7 +284,7 @@ export default function Add() {
               )
             ).data;
 
-            if (newAccData?.length === 0 && typeof newAccData === "undefined") {
+            if (newAccData?.length === 0 || typeof newAccData === "undefined") {
               throw new Error("No accounts found!");
             }
 
@@ -272,16 +296,18 @@ export default function Add() {
              * 2. Iterate through both arrays (logins from GunDB and info returned from API)
              *    at the same time. If any account is missing from API response, then it means that
              *    it isn't registered. I'll put level=-1 for them, just to tell them apart from the rest.
+             *
+             * Note from the future: second method doesn't work, because loop dispatches same GunDB
+             * .get() without updating the indexes. If only GunDB supported `await`...
+             *
+             * Note from even further in the future: settled for the slightky altered second method:
+             * going to iterate through both arrays and will use GunDB ONLY to update the values.
+             * There's just one catch with this: deleted accounts will also get updated.
              */
 
-            let existingLoginsIndex = 0,
-              returnedLoginsIndex = 0;
-            /**
-             * Sanity check: don't want to deal with any latency, so going to fill it up first,
-             * and update everything through GunDB after that.
-             */
+            let returnedLoginsIndex = 0;
             let updatedAccs = [];
-            while (existingLoginsIndex < accs.length) {
+            accs.forEach((acc) => {
               /**
                * Initially, I wanted to simply loop through both arrays, and update accounts
                * after it finished filling up new details. However, as I'm writing this,
@@ -289,45 +315,53 @@ export default function Add() {
                * Because of that, and the fact that `accs` holds even the deleted logins,
                * I'll have get each of them individually, in every iteration of the loop.
                * All of this, just because .unset() doesn't work and .path() is deprecated.
+               *
+               *
+               * Update: realised I can just loop through the bigger array and keep the index
+               * of the second one separately.
+               * `return` in this case acts as a 'substitute' to `continue`.
                */
-              let existingLogin = accs[existingLoginsIndex];
-              let returnedLogin =
-                newAccData[returnedLoginsIndex].username || "";
 
-              gun.get(existingLogin).once((acc) => {
-                if (acc.login === null) {
-                  existingLogin++;
-                  return;
-                }
-                if (
-                  existingLogin.toLowerCase() === returnedLogin.toLowerCase()
-                ) {
-                  /* updatedAccs.push({
-                    login: existingLogin,
-                    level: newAccData[returnedLoginsIndex].level,
-                  }); */
-                  console.log(`Matched - ${existingLogin}`);
-                  existingLoginsIndex++;
-                  returnedLoginsIndex++;
-                  return;
-                } else {
-                  // updatedAccs.push({ login: existingLogin, level: -1 });
-                  console.log(`Didn't match... - ${existingLogin}`);
-                  existingLoginsIndex++;
-                  return;
-                }
-              });
-            }
+              let returnedLogin =
+                newAccData[returnedLoginsIndex]?.username || "";
+
+              if (acc.toLowerCase() === returnedLogin.toLowerCase()) {
+                updatedAccs.push({
+                  login: acc,
+                  level: newAccData[returnedLoginsIndex].level,
+                });
+                console.log(`Matched - ${acc}`);
+                returnedLoginsIndex++;
+                return;
+              } else {
+                updatedAccs.push({ login: acc, level: -1 });
+                console.log(`Didn't match... - ${acc}`);
+                return;
+              }
+            });
 
             setSnackbarMessage("Info fetched succesfully! Updating...");
             setSuccessSnackbarOpen(true);
-            updatedAccs.forEach((acc) => {
-              gun.get(acc.login).put({ login: acc.login, level: acc.level });
+            updatedAccs.forEach((updatedAcc) => {
+              gun.get(updatedAcc.login).once((existingAcc) => {
+                if (existingAcc.login !== null) {
+                  gun.get(updatedAcc.login).put(updatedAcc, () => {
+                    setSuccessSnackbarOpen(false);
+                    setSnackbarMessage(`Updated ${updatedAcc.login}`);
+                    setSuccessSnackbarOpen(true);
+                  });
+                } else {
+                  setSuccessSnackbarOpen(false);
+                  setSnackbarMessage(
+                    `Skipping ${updatedAcc.login} since it's deleted...`
+                  );
+                  setSuccessSnackbarOpen(true);
+                }
+              });
             });
           } catch (e) {
             /**
              * All errors are going to end up here, thanks to modern JavaScript.
-             * If not for .catch() though, not all errors would have .message property.
              * This isn't handling them, but since I'm probably going to be the only one
              * to use this site, all I need is to see some info on the error that happened.
              */
@@ -440,17 +474,6 @@ export default function Add() {
                 onChange={handleLoginChange}
                 className={classes.formInput}
               />
-              <TextField
-                label="Level"
-                id="acc-level"
-                required
-                autoComplete="off"
-                variant="outlined"
-                type="number"
-                value={formLevel}
-                onChange={handleLevelChange}
-                className={classes.formInput}
-              />
               <Button
                 color="secondary"
                 variant="contained"
@@ -496,10 +519,10 @@ export default function Add() {
         </Grid>
         <Grid item xs={1} md={2} lg={3} xl={4} />
       </Grid>
-      {/* Just some snackbars not rendered by default */}
+      {/* Just some snackbars and a dialog not rendered by default */}
       <Snackbar
         open={successSnackbarOpen}
-        autoHideDuration={4000}
+        autoHideDuration={2000}
         onClose={handleSuccessSnackbarClose}
       >
         <Alert
@@ -512,7 +535,7 @@ export default function Add() {
       </Snackbar>
       <Snackbar
         open={errorSnackbarOpen}
-        autoHideDuration={4000}
+        autoHideDuration={2000}
         onClose={handleErrorSnackbarClose}
       >
         <Alert
@@ -523,6 +546,38 @@ export default function Add() {
           {snackbarMessage}
         </Alert>
       </Snackbar>
+      <Dialog
+        open={isDialogOpen}
+        onClose={() => {
+          setIsDialogOpen(false);
+        }}
+      >
+        <DialogTitle>Add user {dialogLogin}?</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Do you want to add {dialogLogin} who{" "}
+            {dialogLevel !== -1
+              ? `has level ${dialogLevel}`
+              : "is unregistered"}
+            ?
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            style={{ color: "red" }}
+            onClick={() => {
+              setIsDialogOpen(false);
+              setDialogLevel(null);
+              setDialogLogin(null);
+            }}
+          >
+            Cancel
+          </Button>
+          <Button color="secondary" onClick={confirmDialog}>
+            Add
+          </Button>
+        </DialogActions>
+      </Dialog>
     </ThemeProvider>
   );
 }

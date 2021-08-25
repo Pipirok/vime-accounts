@@ -126,7 +126,7 @@ export default function Index() {
      * Put login and level of deleted account as null, which I have to check.
      * That's about it
      */
-    gun.get("vime-accs").once((data) => {
+    gun.get("accs").once((data) => {
       if (typeof data !== "undefined" && data !== null) {
         Object.keys(data)
           .filter((key) => key !== "_")
