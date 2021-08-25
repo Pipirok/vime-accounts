@@ -102,7 +102,7 @@ const useStyles = makeStyles((theme) => ({
 export default function Add() {
   const classes = useStyles();
 
-  const gun = Gun();
+  const gun = Gun("https://mvp-gun.herokuapp.com/gun");
 
   useEffect(() => {
     /**

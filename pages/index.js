@@ -100,7 +100,7 @@ const useStyles = makeStyles((theme) => ({
 
 export default function Index() {
   const classes = useStyles();
-  const gun = Gun();
+  const gun = Gun("https://mvp-gun.herokuapp.com/gun");
 
   /**
    * data contains accounts that are shown on the screen,
